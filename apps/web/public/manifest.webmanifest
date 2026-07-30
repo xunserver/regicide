@@ -1,0 +1,8 @@
+{
+  "name": "Regicide",
+  "short_name": "Regicide",
+  "display": "standalone",
+  "background_color": "#12100f",
+  "theme_color": "#12100f",
+  "start_url": "."
+}
