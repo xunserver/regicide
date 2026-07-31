@@ -5,8 +5,5 @@ export default {
   reportDescriptionlessDisables: true,
   reportInvalidScopeDisables: true,
   reportNeedlessDisables: true,
-  rules: {
-    'custom-property-pattern': null,
-    'selector-class-pattern': null,
-  },
+  rules: { 'custom-property-pattern': null, 'selector-class-pattern': null },
 }

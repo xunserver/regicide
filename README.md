@@ -36,10 +36,15 @@
 │   ├── game-core/
 │   ├── game-application/
 │   └── game-ui/
-├── tooling/
-│   ├── eslint/
-│   ├── stylelint/
-│   └── typescript/
+├── eslint.config.mjs
+├── .stylelintrc.mjs
+├── .prettierrc.json
+├── .stylelintignore
+├── .prettierignore
+├── tsconfig.json
+├── tsconfig.base.json
+├── tsconfig.library.json
+├── tsconfig.react.json
 ├── pnpm-workspace.yaml
 └── turbo.json
 ```
