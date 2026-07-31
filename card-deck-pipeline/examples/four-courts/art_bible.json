@@ -2,11 +2,7 @@
   "name": "Four Courts Visual Bible",
   "style": "Premium dark-fantasy editorial illustration; hand-painted gouache and tempera texture on fine paper; elegant simplified shapes; crisp silhouette design; restrained detail; consistent anatomically believable figures.",
   "world": "A timeless mythic realm of four rival medieval courts. Materials are stone, aged metal, woven cloth, glass and living wood. No modern technology.",
-  "palette": [
-    "deep charcoal",
-    "parchment ivory",
-    "muted antique gold"
-  ],
+  "palette": ["deep charcoal", "parchment ivory", "muted antique gold"],
   "global_forbidden": [
     "letters",
     "words",
@@ -35,43 +31,23 @@
   },
   "factions": {
     "night_court": {
-      "palette": [
-        "blue-black",
-        "cold silver",
-        "desaturated moon blue"
-      ],
+      "palette": ["blue-black", "cold silver", "desaturated moon blue"],
       "visual_language": "pointed arches, raven feathers, narrow steel shapes"
     },
     "ember_court": {
-      "palette": [
-        "oxblood red",
-        "warm ivory",
-        "aged brass"
-      ],
+      "palette": ["oxblood red", "warm ivory", "aged brass"],
       "visual_language": "rounded arches, rose motifs, layered ceremonial cloth"
     },
     "crystal_court": {
-      "palette": [
-        "smoky teal",
-        "pale gold",
-        "translucent quartz"
-      ],
+      "palette": ["smoky teal", "pale gold", "translucent quartz"],
       "visual_language": "faceted geometry, glass inlays, precise symmetry"
     },
     "wild_court": {
-      "palette": [
-        "forest green",
-        "umber",
-        "weathered bronze"
-      ],
+      "palette": ["forest green", "umber", "weathered bronze"],
       "visual_language": "branching forms, carved wood, asymmetrical organic lines"
     },
     "wanderers": {
-      "palette": [
-        "charcoal",
-        "ivory",
-        "antique gold"
-      ],
+      "palette": ["charcoal", "ivory", "antique gold"],
       "visual_language": "balanced mixture of the four courts with mask motifs"
     }
   },

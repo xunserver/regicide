@@ -1,4 +1,24 @@
 export { createInitialSession, gameReducer } from './reducer'
-export { getSelectedPower } from './selectors'
+export { getCurrentPlayer, getSelectedSubmitCommand, getSelectedValue } from './selectors'
 export type { GameCommand, GameSession } from './types'
-export type { Card, GamePhase, GameState, Suit } from '@regicide/game-core'
+export {
+  dispatch,
+  getAttackValue,
+  getCard,
+  getCardValue,
+  getCounterattackDamage,
+  getCurrentEnemyStats,
+  getLegalCommands,
+} from '@regicide/game-core'
+export type {
+  Card,
+  CardId,
+  GameEvent,
+  GameOutcome,
+  GameState,
+  PlayerId,
+  PlayerState,
+  RoyalRank,
+  Suit,
+  SuitedCard,
+} from '@regicide/game-core'

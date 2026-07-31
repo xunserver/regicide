@@ -381,20 +381,46 @@ body {
   line-height: 1.45;
 }
 
-.card--heart,
-.card--diamond {
+.card--hearts,
+.card--diamonds {
   color: #8f2825;
 }
 
-.card--club,
-.card--spade {
+.card--clubs,
+.card--spades,
+.card--jester {
   color: #292726;
 }
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 10px;
   margin-top: 18px;
+}
+
+.secondary-action {
+  min-height: 56px;
+  padding: 9px 20px;
+  color: var(--gold-pale);
+  background: #2c2521;
+  border: 1px solid rgb(213 173 98 / 42%);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.secondary-action:hover {
+  background: #3a3029;
+}
+
+.enemy__stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 12px;
+  color: #a79273;
+  font-size: 0.72rem;
 }
 
 .primary-action {

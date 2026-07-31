@@ -19,10 +19,7 @@
     "require_human_approval": true
   },
   "layout": {
-    "output_size": [
-      1024,
-      1536
-    ],
+    "output_size": [1024, 1536],
     "frame_width": 18,
     "panel_opacity": 205,
     "title_height": 112,

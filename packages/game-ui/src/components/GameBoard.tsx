@@ -1,11 +1,89 @@
+import {
+  getCard,
+  getCounterattackDamage,
+  getCurrentEnemyStats,
+  getCurrentPlayer,
+  getLegalCommands,
+  getSelectedSubmitCommand,
+  type GameEvent,
+  type RoyalRank,
+  type Suit,
+} from '@regicide/game-application'
 import { useGame } from '../react/useGame'
 import { CardView } from './CardView'
 
+const rankName: Record<RoyalRank, string> = {
+  jack: 'JACK',
+  queen: 'QUEEN',
+  king: 'KING',
+}
+
+const suitName: Record<Suit, string> = {
+  hearts: 'HEARTS',
+  diamonds: 'DIAMONDS',
+  clubs: 'CLUBS',
+  spades: 'SPADES',
+}
+
+function eventMessage(event: GameEvent | undefined): string {
+  if (!event) return '王庭已经开启。'
+  switch (event.type) {
+    case 'cards-played':
+      return `打出 ${event.cardIds.length} 张牌，攻击值 ${event.attackValue}。`
+    case 'hearts-resolved':
+      return `Hearts 恢复了 ${event.cardIds.length} 张牌。`
+    case 'diamonds-resolved':
+      return `Diamonds 抽取了 ${event.draws.length} 张牌。`
+    case 'enemy-immunity-cancelled':
+      return 'Jester 解除了当前敌人的花色免疫。'
+    case 'enemy-damaged':
+      return `造成 ${event.amount} 点伤害，累计 ${event.totalDamage} 点。`
+    case 'enemy-defeated':
+      return event.exact ? '精准击败敌人，王室牌回到 Tavern 顶。' : '敌人被超额击败。'
+    case 'enemy-revealed':
+      return '下一位王室敌人现身。'
+    case 'counterattack-required':
+      return `敌人反击，需要承受 ${event.amount} 点伤害。`
+    case 'damage-suffered':
+      return `弃置 ${event.cardIds.length} 张牌承受反击。`
+    case 'player-yielded':
+      return '本回合选择 Yield。'
+    case 'next-player-chosen':
+      return 'Jester 已指定下一位玩家。'
+    case 'solo-jester-used':
+      return `Jester 重整手牌，抽取 ${event.drawnCardIds.length} 张牌。`
+    case 'turn-started':
+      return '新的玩家回合开始。'
+    case 'game-won':
+      return event.rating ? `${event.rating.toUpperCase()} VICTORY` : 'VICTORY'
+    case 'game-lost':
+      return '本次进攻宣告失败。'
+  }
+}
+
 export function GameBoard() {
-  const { state, selectedPower, dispatch } = useGame()
+  const { state, selectedValue, dispatch } = useGame()
   const { game, selectedCardIds } = state
-  const healthPercent = (game.enemy.health / game.enemy.maxHealth) * 100
-  const canPlay = selectedCardIds.length > 0 && game.phase === 'player-turn'
+  const player = getCurrentPlayer(state)
+  const enemyCard = game.currentEnemy ? getCard(game.currentEnemy.cardId) : null
+  const enemyStats = getCurrentEnemyStats(game)
+  const legalCommands = getLegalCommands(game, game.currentPlayerId)
+  const selectedCommand = getSelectedSubmitCommand(state)
+  const yieldAvailable = legalCommands.some((command) => command.type === 'yield')
+  const soloJester = legalCommands.find((command) => command.type === 'use-solo-jester')
+  const counterattack = getCounterattackDamage(game)
+  const enemyNumber = game.currentEnemy ? 12 - game.castleDeck.length : 12
+  const healthPercent = enemyStats ? (enemyStats.healthRemaining / enemyStats.health) * 100 : 0
+  const isTerminal = game.status !== 'in-progress'
+  const isDiscarding = game.pendingDecision === 'discard-for-damage'
+  const lastMessage = eventMessage(state.lastEvents.at(-1))
+
+  const enemyTitle =
+    enemyCard?.kind === 'suited' && typeof enemyCard.rank !== 'number'
+      ? enemyCard.rank === 'animal-companion'
+        ? 'ANIMAL COMPANION'
+        : `${rankName[enemyCard.rank]} OF ${suitName[enemyCard.suit]}`
+      : 'FALLEN COURT'
 
   return (
     <main className="game-shell">
@@ -18,8 +96,8 @@ export function GameBoard() {
           </div>
         </div>
         <div className="turn-indicator">
-          <span>回合</span>
-          <strong>{game.turn.toString().padStart(2, '0')}</strong>
+          <span>敌人</span>
+          <strong>{enemyNumber.toString().padStart(2, '0')}</strong>
         </div>
       </header>
 
@@ -27,71 +105,110 @@ export function GameBoard() {
         <div className="enemy-aura" aria-hidden="true" />
         <div className="enemy">
           <div className="enemy__crown">♛</div>
-          <p>堕落王庭 · 守门者</p>
-          <h1>{game.enemy.name}</h1>
-          <div className="health">
-            <div className="health__labels">
-              <span>生命</span>
-              <strong>
-                {game.enemy.health} / {game.enemy.maxHealth}
-              </strong>
-            </div>
-            <div className="health__track">
-              <span style={{ width: `${healthPercent}%` }} />
-            </div>
-          </div>
+          <p>堕落王庭 · 当前敌人</p>
+          <h1>{enemyTitle}</h1>
+          {enemyStats && (
+            <>
+              <div className="health">
+                <div className="health__labels">
+                  <span>生命</span>
+                  <strong>
+                    {enemyStats.healthRemaining} / {enemyStats.health}
+                  </strong>
+                </div>
+                <div className="health__track">
+                  <span style={{ width: `${healthPercent}%` }} />
+                </div>
+              </div>
+              <div className="enemy__stats">
+                <span>反击 {counterattack}</span>
+                <span>护盾 {enemyStats.shield}</span>
+              </div>
+            </>
+          )}
         </div>
 
         <aside className="battle-log" aria-label="战斗日志">
           <span>战况</span>
-          <p>{game.log[0]}</p>
+          <p>{lastMessage}</p>
         </aside>
       </section>
 
       <section className="player-area">
         <div className="hand-heading">
           <div>
-            <span>你的手牌</span>
-            <small>{game.hand.length} 张可用</small>
+            <span>{isDiscarding ? '选择承伤牌' : '你的手牌'}</span>
+            <small>{player.hand.length} 张可用</small>
           </div>
           <p>
-            已选力量 <strong>{selectedPower}</strong>
+            已选牌值 <strong>{selectedValue}</strong>
           </p>
         </div>
 
         <div className="hand" role="group" aria-label="选择手牌">
-          {game.hand.map((card) => (
+          {player.hand.map((cardId) => (
             <CardView
-              key={card.id}
-              card={card}
-              selected={selectedCardIds.includes(card.id)}
-              onToggle={() => dispatch({ type: 'card/toggle', cardId: card.id })}
+              key={cardId}
+              card={getCard(cardId)}
+              selected={selectedCardIds.includes(cardId)}
+              onToggle={() => dispatch({ type: 'card/toggle', cardId })}
             />
           ))}
-          {game.hand.length === 0 && game.phase !== 'victory' && (
-            <p className="empty-hand">手牌已耗尽。</p>
-          )}
+          {player.hand.length === 0 && !isTerminal && <p className="empty-hand">手牌已耗尽。</p>}
         </div>
 
         <div className="actions">
-          {game.phase === 'victory' ? (
+          {isTerminal ? (
             <button
               className="primary-action"
               type="button"
               onClick={() => dispatch({ type: 'game/restart' })}
             >
-              再战一次
+              <span>{game.status === 'won' ? '再次挑战' : '重新开始'}</span>
+              <small>
+                {game.outcome?.type === 'won' && game.outcome.rating
+                  ? `${game.outcome.rating.toUpperCase()} VICTORY`
+                  : game.status.toUpperCase()}
+              </small>
             </button>
           ) : (
-            <button
-              className="primary-action"
-              type="button"
-              disabled={!canPlay}
-              onClick={() => dispatch({ type: 'cards/play' })}
-            >
-              <span>打出卡牌</span>
-              <small>{selectedPower > 0 ? `造成 ${selectedPower} 点伤害` : '先选择卡牌'}</small>
-            </button>
+            <>
+              {yieldAvailable && (
+                <button
+                  className="secondary-action"
+                  type="button"
+                  onClick={() => dispatch({ type: 'game/yield' })}
+                >
+                  Yield
+                </button>
+              )}
+              {soloJester?.type === 'use-solo-jester' && (
+                <button
+                  className="secondary-action"
+                  type="button"
+                  onClick={() => dispatch({ type: 'solo-jester/use', cardId: soloJester.cardId })}
+                >
+                  使用 Jester
+                </button>
+              )}
+              <button
+                className="primary-action"
+                type="button"
+                disabled={!selectedCommand}
+                onClick={() => dispatch({ type: 'cards/submit' })}
+              >
+                <span>{isDiscarding ? '弃牌承伤' : '打出卡牌'}</span>
+                <small>
+                  {selectedCardIds.length === 0
+                    ? '先选择卡牌'
+                    : selectedCommand
+                      ? isDiscarding
+                        ? `承受 ${counterattack} 点伤害`
+                        : `攻击值 ${selectedValue}`
+                      : '当前组合不合法'}
+                </small>
+              </button>
+            </>
           )}
         </div>
       </section>

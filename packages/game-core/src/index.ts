@@ -1,3 +1,51 @@
-export { starterHand } from './cards'
-export { calculatePower, createInitialGame, playCards } from './rules'
-export type { Card, GamePhase, GameState, Suit } from './types'
+export {
+  CARDS,
+  CARD_IDS,
+  JESTER_IDS,
+  NUMERIC_RANKS,
+  ROYAL_RANKS,
+  SUITS,
+  getCard,
+  getCardValue,
+  getEnemyStats,
+  isCardId,
+  isRoyalCard,
+} from './cards'
+export {
+  createGame,
+  dispatch,
+  getAttackValue,
+  getCounterattackDamage,
+  getCurrentEnemyStats,
+  getEnemyDamage,
+  getEnemyShield,
+  getLegalCommands,
+  isEnemyImmunityCancelled,
+  isLegalPlay,
+} from './rules'
+export { parseGameState } from './state'
+export type {
+  Card,
+  CardDraw,
+  CardId,
+  CreateGameConfig,
+  CurrentEnemy,
+  GameCommand,
+  GameEvent,
+  GameOutcome,
+  GameState,
+  JesterCard,
+  NumericRank,
+  PendingDecision,
+  PlayRecord,
+  PlayerId,
+  PlayerState,
+  RandomState,
+  RejectionReason,
+  RoyalRank,
+  Suit,
+  SuitedCard,
+  SuitedRank,
+  TransitionResult,
+  VictoryRating,
+} from './types'
