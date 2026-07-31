@@ -1,0 +1,97 @@
+{
+  "name": "Four Courts Visual Bible",
+  "style": "Premium dark-fantasy editorial illustration; hand-painted gouache and tempera texture on fine paper; elegant simplified shapes; crisp silhouette design; restrained detail; consistent anatomically believable figures.",
+  "world": "A timeless mythic realm of four rival medieval courts. Materials are stone, aged metal, woven cloth, glass and living wood. No modern technology.",
+  "palette": [
+    "deep charcoal",
+    "parchment ivory",
+    "muted antique gold"
+  ],
+  "global_forbidden": [
+    "letters",
+    "words",
+    "numbers",
+    "logos",
+    "watermarks",
+    "card borders",
+    "photorealism",
+    "3D render",
+    "anime",
+    "neon cyberpunk colors",
+    "cropped heads",
+    "extra limbs"
+  ],
+  "output_contract": "One borderless portrait illustration only. No text, numbers, icons, UI, frames, margins or watermarks. Keep faces, hands and faction relics inside the central 80% safe area. The image must fill the canvas.",
+  "categories": {
+    "number": {
+      "composition": "Environmental tableau with a simple countable motif; subjects read clearly at thumbnail size."
+    },
+    "court": {
+      "composition": "Formal character portrait with the same camera height and painterly finish across all court cards."
+    },
+    "joker": {
+      "composition": "More kinetic than court cards while preserving the same materials, brushwork and world."
+    }
+  },
+  "factions": {
+    "night_court": {
+      "palette": [
+        "blue-black",
+        "cold silver",
+        "desaturated moon blue"
+      ],
+      "visual_language": "pointed arches, raven feathers, narrow steel shapes"
+    },
+    "ember_court": {
+      "palette": [
+        "oxblood red",
+        "warm ivory",
+        "aged brass"
+      ],
+      "visual_language": "rounded arches, rose motifs, layered ceremonial cloth"
+    },
+    "crystal_court": {
+      "palette": [
+        "smoky teal",
+        "pale gold",
+        "translucent quartz"
+      ],
+      "visual_language": "faceted geometry, glass inlays, precise symmetry"
+    },
+    "wild_court": {
+      "palette": [
+        "forest green",
+        "umber",
+        "weathered bronze"
+      ],
+      "visual_language": "branching forms, carved wood, asymmetrical organic lines"
+    },
+    "wanderers": {
+      "palette": [
+        "charcoal",
+        "ivory",
+        "antique gold"
+      ],
+      "visual_language": "balanced mixture of the four courts with mask motifs"
+    }
+  },
+  "characters": {},
+  "reference_images": [],
+  "qa_rubric": {
+    "minimum_score": 0.72,
+    "must_have": [
+      "matches the house style and faction palette",
+      "contains all required details",
+      "contains no text or border",
+      "clear readable composition at thumbnail size",
+      "believable anatomy"
+    ],
+    "reject_if": [
+      "wrong faction palette",
+      "photorealistic, 3D, anime, or modern",
+      "major anatomy defect",
+      "missing required subject",
+      "visible text, logo, watermark, or card frame"
+    ]
+  }
+}

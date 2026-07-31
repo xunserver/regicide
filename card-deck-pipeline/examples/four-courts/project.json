@@ -1,0 +1,32 @@
+{
+  "art_bible": "art_bible.json",
+  "deck": "deck.json",
+  "workspace": "workspaces/four-courts",
+  "provider": {
+    "base_url": "https://www.inroi.shop",
+    "image_model": "gpt-image-2",
+    "qa_model": null,
+    "size": "1024x1536",
+    "quality": "high",
+    "output_format": "png",
+    "timeout_seconds": 300,
+    "supports_edits": false,
+    "extra_body": {}
+  },
+  "workflow": {
+    "concurrency": 2,
+    "max_attempts": 3,
+    "require_human_approval": true
+  },
+  "layout": {
+    "output_size": [
+      1024,
+      1536
+    ],
+    "frame_width": 18,
+    "panel_opacity": 205,
+    "title_height": 112,
+    "footer_height": 62,
+    "font_path": null
+  }
+}
