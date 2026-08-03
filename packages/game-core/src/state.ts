@@ -20,6 +20,7 @@ function assertCardIds(value: unknown, field: string): asserts value is string[]
 function assertPlayer(value: unknown, expectedMaxHandSize: number): asserts value is PlayerState {
   if (!isRecord(value)) fail('player must be an object')
   assertString(value.id, 'player.id')
+  if (value.id.length === 0) fail('player.id must be non-empty')
   assertCardIds(value.hand, `player ${value.id} hand`)
   if (value.maxHandSize !== expectedMaxHandSize) fail(`player ${value.id} has wrong hand limit`)
   if (value.hand.length > expectedMaxHandSize) fail(`player ${value.id} exceeds hand limit`)

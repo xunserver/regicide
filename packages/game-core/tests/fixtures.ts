@@ -25,6 +25,7 @@ interface FixtureOptions {
 export function createFixture(options: FixtureOptions = {}): GameState {
   const players = options.players ?? [{ id: 'p1', hand: ['hearts-2'] }, { id: 'p2' }]
   const maxHandSize = [0, 8, 7, 6, 5][players.length]!
+  const status = options.status ?? 'in-progress'
   const currentEnemyId = options.currentEnemyId ?? 'spades-jack'
   const plays = options.plays ?? []
   const castleDeck = options.castleDeck ?? []
@@ -35,7 +36,7 @@ export function createFixture(options: FixtureOptions = {}): GameState {
   const soloUsed = options.soloJestersUsed ?? []
   const occupied = new Set([
     ...players.flatMap((player) => player.hand ?? []),
-    currentEnemyId,
+    ...(status === 'won' ? [] : [currentEnemyId]),
     ...plays.flatMap((play) => play.cardIds),
     ...castleDeck,
     ...tavernDeck,
@@ -44,7 +45,6 @@ export function createFixture(options: FixtureOptions = {}): GameState {
     ...soloUsed,
   ])
 
-  const status = options.status ?? 'in-progress'
   const state: GameState = {
     schemaVersion: 1,
     status,

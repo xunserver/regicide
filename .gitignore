@@ -1,9 +1,7 @@
 node_modules
 dist
-.turbo
 .DS_Store
 *.local
 *.tsbuildinfo
 coverage
 .eslintcache
-.stylelintcache

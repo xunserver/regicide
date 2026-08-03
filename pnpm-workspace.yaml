@@ -1,6 +1,5 @@
 packages:
-  - apps/*
-  - packages/*
+  - packages/game-core
 
 minimumReleaseAge: 1440
 

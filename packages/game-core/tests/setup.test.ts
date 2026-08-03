@@ -92,4 +92,38 @@ describe('game setup', () => {
     damaged.tavernDeck.push(damaged.players[0]!.hand[0]!)
     expect(() => parseGameState(damaged)).toThrow('exactly one zone')
   })
+
+  it.each([
+    {
+      name: 'zero players',
+      config: { playerIds: [], startingPlayerId: 'p1', seed: 1 },
+      message: 'between 1 and 4 players',
+    },
+    {
+      name: 'five players',
+      config: {
+        playerIds: ['p1', 'p2', 'p3', 'p4', 'p5'],
+        startingPlayerId: 'p1',
+        seed: 1,
+      },
+      message: 'between 1 and 4 players',
+    },
+    {
+      name: 'an empty player id',
+      config: { playerIds: ['p1', ''], startingPlayerId: 'p1', seed: 1 },
+      message: 'non-empty and unique',
+    },
+    {
+      name: 'duplicate player ids',
+      config: { playerIds: ['p1', 'p1'], startingPlayerId: 'p1', seed: 1 },
+      message: 'non-empty and unique',
+    },
+    {
+      name: 'a starting player outside the game',
+      config: { playerIds: ['p1', 'p2'], startingPlayerId: 'p3', seed: 1 },
+      message: 'Starting player must be in playerIds',
+    },
+  ])('rejects $name', ({ config, message }) => {
+    expect(() => createGame(config)).toThrow(message)
+  })
 })
