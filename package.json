@@ -8,16 +8,17 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "build": "pnpm --filter @regicide/game-core build",
-    "lint": "pnpm --filter @regicide/game-core lint",
-    "lint:fix": "pnpm --filter @regicide/game-core lint:fix",
-    "typecheck": "pnpm --filter @regicide/game-core typecheck",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "typecheck": "pnpm -r typecheck",
     "test": "pnpm --filter @regicide/game-core test",
     "test:coverage": "pnpm --filter @regicide/game-core test:coverage",
     "test:watch": "pnpm --filter @regicide/game-core exec vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run format:check"
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test:coverage && pnpm run build && pnpm run format:check",
+    "play": "pnpm --filter @regicide/game-cli play"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

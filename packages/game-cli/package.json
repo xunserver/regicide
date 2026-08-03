@@ -1,0 +1,22 @@
+{
+  "name": "@regicide/game-cli",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "regicide": "src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src --cache --cache-location .eslintcache",
+    "lint:fix": "eslint src --cache --cache-location .eslintcache --fix",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "play": "jiti src/index.ts"
+  },
+  "dependencies": {
+    "@regicide/game-core": "workspace:*"
+  },
+  "devDependencies": {
+    "jiti": "2.7.0"
+  }
+}

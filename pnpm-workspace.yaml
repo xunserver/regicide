@@ -1,5 +1,6 @@
 packages:
   - packages/game-core
+  - packages/game-cli
 
 minimumReleaseAge: 1440
 

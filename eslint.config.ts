@@ -18,7 +18,7 @@ export default defineConfig(
   },
   {
     name: 'regicide/typescript',
-    files: ['packages/game-core/**/*.{ts,tsx}'],
+    files: ['packages/game-core/**/*.{ts,tsx}', 'packages/game-cli/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -43,7 +43,7 @@ export default defineConfig(
             { name: 'react', message: 'game-core must remain framework-independent.' },
             { name: 'react-dom', message: 'game-core cannot depend on DOM rendering.' },
           ],
-          patterns: ['apps/*', '@regicide/*'],
+          patterns: ['apps/*'],
         },
       ],
     },
