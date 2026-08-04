@@ -18,7 +18,11 @@ export default defineConfig(
   },
   {
     name: 'regicide/typescript',
-    files: ['packages/game-core/**/*.{ts,tsx}', 'packages/game-cli/**/*.{ts,tsx}'],
+    files: [
+      'packages/game-core/**/*.{ts,tsx}',
+      'packages/game-application/**/*.{ts,tsx}',
+      'packages/game-cli/**/*.{ts,tsx}',
+    ],
     extends: [
       js.configs.recommended,
       tseslint.configs.recommendedTypeChecked,
@@ -36,14 +40,23 @@ export default defineConfig(
         { fixStyle: 'inline-type-imports', prefer: 'type-imports' },
       ],
       '@typescript-eslint/no-confusing-void-expression': 'off',
+    },
+  },
+  {
+    name: 'regicide/framework-independent-game-packages',
+    files: ['packages/game-core/**/*.{ts,tsx}', 'packages/game-application/**/*.{ts,tsx}'],
+    rules: {
       'no-restricted-imports': [
         'error',
         {
           paths: [
-            { name: 'react', message: 'game-core must remain framework-independent.' },
-            { name: 'react-dom', message: 'game-core cannot depend on DOM rendering.' },
+            { name: 'react', message: 'Game packages must remain framework-independent.' },
+            { name: 'react-dom', message: 'Game packages cannot depend on DOM rendering.' },
           ],
-          patterns: ['apps/*'],
+          patterns: [
+            { group: ['apps/*'], message: 'Game packages cannot depend on applications.' },
+            { group: ['node:*'], message: 'Game packages cannot depend on Node APIs.' },
+          ],
         },
       ],
     },

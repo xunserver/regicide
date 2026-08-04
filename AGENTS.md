@@ -2,8 +2,15 @@
 
 ## Project Structure
 
-This repository contains only `packages/game-core`, a framework-independent TypeScript rules
-engine. Keep it free of React, DOM, networking, persistence, and application-layer dependencies.
+This repository contains three TypeScript packages:
+
+- `packages/game-core`: the deterministic rules engine.
+- `packages/game-application`: the framework-independent local solo orchestration layer.
+- `packages/game-cli`: a separate command-line program and out-of-scope adapter for the browser app.
+
+Keep `game-core` free of application-layer dependencies. Keep both `game-core` and
+`game-application` free of React, DOM, networking, browser, and Node runtime dependencies;
+`game-application` may depend only on `game-core` at runtime.
 
 ## Commands
 
@@ -27,6 +34,7 @@ columns. Prefer `import type`, `PascalCase` for types, and `camelCase` for funct
 
 ## Testing
 
-Vitest tests live in `packages/game-core/tests`. Rule transitions should provide a fixed state and
-command, then assert the complete resulting state and ordered events. Rejections must preserve the
-input state and emit no events. Keep all fixtures and simulations deterministic.
+Vitest tests live in each tested package's `tests` directory. Core rule transitions should provide a
+fixed state and command, then assert the complete resulting state and ordered events. Application
+tests should use fake ports and fixed seeds, and must prove save-before-commit behavior. Rejections
+must preserve the input state and emit no events. Keep all fixtures and simulations deterministic.
