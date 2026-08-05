@@ -122,6 +122,38 @@ class LocalGameSession {
 }
 
 function getLegalPlayerIntents(game: ReadonlyGameState): readonly PlayerIntent[]
+type PlayerIntentPreview =
+  | {
+      readonly type: 'play-cards'
+      readonly attackValue: number
+      readonly damageDealt: number
+      readonly activeSuits: readonly Suit[]
+      readonly drawCount: number
+      readonly enemyHealthRemaining: number
+      readonly enemyResult: 'survives' | 'defeated-exactly' | 'defeated-with-excess'
+      readonly counterattackDamage: number | null
+    }
+  | {
+      readonly type: 'yield'
+      readonly counterattackDamage: number
+    }
+  | {
+      readonly type: 'discard-for-damage'
+      readonly requiredDamage: number
+      readonly discardValue: number
+      readonly excessValue: number
+    }
+  | {
+      readonly type: 'use-solo-jester'
+      readonly discardCount: number
+      readonly drawCount: number
+      readonly remainingJesters: number
+      readonly counterattackDamage: number | null
+    }
+function previewPlayerIntent(
+  game: ReadonlyGameState,
+  intent: PlayerIntent,
+): PlayerIntentPreview | null
 function getCurrentEnemyStats(game: ReadonlyGameState): {
   readonly attack: number
   readonly health: number
@@ -136,6 +168,10 @@ function isEnemyImmunityCancelled(game: ReadonlyGameState): boolean
 ```
 
 UI 确认行为由 UI 自己完成；应用层用不同方法名表达破坏性边界。`startNewGame` 只接受 `no-game`，`replaceWithNewGame` 用于已经确认的替换，`clearUnrecoverableSave` 只清理损坏存档，不顺便开局。
+
+`previewPlayerIntent` 只接受完整 `PlayerIntent`，并只为相对传入对局状态合法的意图返回深冻结摘要。出牌预览的 `attackValue` 是卡牌基础攻击总和，`damageDealt` 包含生效的梅花加倍，`activeSuits` 排除尚未解除的敌方花色免疫，`drawCount` 只公开方片效果的数量；敌人结果区分存活、精确击败和过量击败，击败时 `counterattackDamage` 为 `null`。Solo Jester 的 `remainingJesters` 表示本次使用后的剩余次数；在承伤阶段使用时 `counterattackDamage` 保留公开的待承受伤害，在出牌阶段使用时为 `null`。任何结果都不包含候选状态、事件、城堡或酒馆暗牌身份。
+
+返回 `null` 只表示意图对传入 `game` 不合法；纯查询无法识别传入快照本身是否已经过期。UI 在 `SessionSnapshot` 引用变化时必须丢弃旧预览，并始终以最新 `active.game` 重新计算。部分选牌和仍可加入的卡牌继续从 `getLegalPlayerIntents` 的合法完整意图集合推导。
 
 `GameSaveStore.load` 返回 `empty | loaded | unrecoverable | failed`，`save` 返回 `saved | failed`，`clear` 返回 `cleared | failed`。`SaveProblem.code` 固定为 `invalid-envelope`、`unsupported-save-version`、`unsupported-game-version`、`invalid-game-state` 或 `invalid-solo-game`；`StorageProblem.code` 固定为 `unavailable`、`quota-exceeded` 或 `unknown`。
 
