@@ -4,6 +4,7 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-tap-highlight-color: transparent;
+  --game-max-width: 480px;
 }
 
 * {
@@ -22,16 +23,27 @@ body,
   user-select: none;
 }
 
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
 .game-host {
+  position: relative;
   width: 100%;
+  max-width: var(--game-max-width);
   height: 100%;
   height: 100dvh;
-  margin: 0;
+  margin: 0 auto;
   padding: 0;
   overflow: hidden;
+  background: #1a1510;
 }
 
 .game-host canvas {
   display: block;
-  margin: 0 auto;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0;
 }

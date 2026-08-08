@@ -9,9 +9,29 @@ export function GameCanvas() {
     const host = hostRef.current
     if (!host) return
 
-    const game = createGame(host)
+    let game: ReturnType<typeof createGame> | null = null
+    let cancelled = false
+    let tries = 0
+
+    const start = (): void => {
+      if (cancelled || game) return
+      // Some WebViews (incl. MIUI) report 0×0 on the first frame.
+      if (host.clientWidth < 2 || host.clientHeight < 2) {
+        tries += 1
+        if (tries < 60) {
+          requestAnimationFrame(start)
+        }
+        return
+      }
+      game = createGame(host)
+    }
+
+    start()
+
     return () => {
-      game.destroy(true)
+      cancelled = true
+      game?.destroy(true)
+      game = null
     }
   }, [])
 

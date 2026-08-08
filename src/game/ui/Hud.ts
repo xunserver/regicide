@@ -1,12 +1,15 @@
 import * as Phaser from 'phaser'
 import { IMAGE_KEYS, THEME } from '../assets/manifest.ts'
+import { getDpr, textStyle } from '../dpr.ts'
 import { FONT_UI } from '../i18n/zh.ts'
 
 export type HudButtonConfig = {
   x: number
   y: number
   label: string
+  /** Design CSS-pixel width (scaled by DPR internally). */
   width?: number
+  /** Design CSS-pixel height (scaled by DPR internally). */
   height?: number
   enabled?: boolean
   /** false = 无底板金框，仅文字+热区（用于顶栏菜单等） */
@@ -16,6 +19,7 @@ export type HudButtonConfig = {
 
 /**
  * 动作按钮。默认金框；framed:false 时无框，热区仍覆盖整块点击范围。
+ * 宽高按设计 CSS 像素传入，内部乘 DPR。
  */
 export class HudButton extends Phaser.GameObjects.Container {
   private readonly plate: Phaser.GameObjects.Rectangle | null
@@ -26,31 +30,40 @@ export class HudButton extends Phaser.GameObjects.Container {
 
   constructor(scene: Phaser.Scene, config: HudButtonConfig) {
     super(scene, config.x, config.y)
-    const w = config.width ?? 108
-    const h = config.height ?? 44
+    const dpr = getDpr(scene)
+    const w = (config.width ?? 108) * dpr
+    const h = (config.height ?? 44) * dpr
     this.framed = config.framed !== false
 
     this.plate = this.framed
       ? scene.add
           .rectangle(0, 0, w, h, 0x1a1510, 0.9)
-          .setStrokeStyle(1.5, 0xc9a227, 0.95)
+          .setStrokeStyle(1.5 * dpr, 0xc9a227, 0.95)
       : null
 
     this.label = scene.add
-      .text(0, 0, config.label, {
-        fontFamily: FONT_UI,
-        fontSize: this.framed ? '15px' : '14px',
-        color: THEME.parchment,
-        align: 'center',
-      })
+      .text(
+        0,
+        0,
+        config.label,
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: this.framed ? '16px' : '15px',
+            color: THEME.parchment,
+            align: 'center',
+          },
+          scene,
+        ),
+      )
       .setOrigin(0.5)
 
     const children: Phaser.GameObjects.GameObject[] = []
     if (this.plate) children.push(this.plate)
 
     if (this.framed) {
-      const icon = scene.add.image(0, 0, IMAGE_KEYS.uiButton).setDisplaySize(18, 18)
-      const gap = 8
+      const icon = scene.add.image(0, 0, IMAGE_KEYS.uiButton).setDisplaySize(18 * dpr, 18 * dpr)
+      const gap = 8 * dpr
       const contentW = icon.displayWidth + gap + this.label.width
       icon.setPosition(-contentW / 2 + icon.displayWidth / 2, 0)
       this.label.setPosition(contentW / 2 - this.label.width / 2, 0)
@@ -76,12 +89,12 @@ export class HudButton extends Phaser.GameObjects.Container {
     })
     this.hitZone.on('pointerover', () => {
       if (!this.enabled) return
-      if (this.plate) this.plate.setStrokeStyle(2, 0xe0c35a, 1)
+      if (this.plate) this.plate.setStrokeStyle(2 * dpr, 0xe0c35a, 1)
       else this.label.setColor(THEME.gold)
     })
     this.hitZone.on('pointerout', () => {
       this.setScale(1)
-      if (this.plate) this.plate.setStrokeStyle(1.5, 0xc9a227, 0.95)
+      if (this.plate) this.plate.setStrokeStyle(1.5 * dpr, 0xc9a227, 0.95)
       else this.label.setColor(THEME.parchment)
     })
 
@@ -112,14 +125,22 @@ export class StatusPlaque extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, _width = 340) {
     super(scene, x, y)
     this.text = scene.add
-      .text(0, 0, '', {
-        fontFamily: FONT_UI,
-        fontSize: '17px',
-        color: THEME.parchment,
-        align: 'center',
-        stroke: '#1a1510',
-        strokeThickness: 4,
-      })
+      .text(
+        0,
+        0,
+        '',
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '18px',
+            color: THEME.parchment,
+            align: 'center',
+            stroke: '#1a1510',
+            strokeThickness: 4,
+          },
+          scene,
+        ),
+      )
       .setOrigin(0.5)
     this.add(this.text)
     scene.add.existing(this)

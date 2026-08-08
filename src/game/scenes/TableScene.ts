@@ -12,6 +12,7 @@ import {
   IMAGE_KEYS,
   THEME,
 } from '../assets/manifest.ts'
+import { applyHiDpiCamera, du, getDpr, lockHiDpiCamera, textStyle, viewSize } from '../dpr.ts'
 import {
   FONT_UI,
   phaseNameZh,
@@ -30,13 +31,31 @@ type TableData = {
   resume?: boolean
 }
 
+/** Fan card centers across width without clipping left/right card edges. */
+function fanCenters(
+  count: number,
+  width: number,
+  cardW: number,
+  maxStep: number,
+  edgePad = 10,
+): { step: number; startX: number } {
+  if (count <= 1) return { step: 0, startX: width / 2 }
+  const sideInset = cardW / 2 + edgePad
+  const maxSpan = Math.max(0, width - sideInset * 2)
+  const step = Math.min(maxStep, maxSpan / (count - 1))
+  const span = step * (count - 1)
+  return { step, startX: width / 2 - span / 2 }
+}
+
 export class TableScene extends Phaser.Scene {
   private controller!: GameController
   private unsubscribe: (() => void) | null = null
   private handViews: CardView[] = []
   private playAreaViews: CardView[] = []
   private enemyView: CardView | null = null
+  private bg!: Phaser.GameObjects.Image
   private plaque!: StatusPlaque
+  private menuBtn!: HudButton
   private enemyStats!: Phaser.GameObjects.Text
   private hpBarBg!: Phaser.GameObjects.Rectangle
   private hpBarFill!: Phaser.GameObjects.Rectangle
@@ -48,12 +67,15 @@ export class TableScene extends Phaser.Scene {
   private btnYield!: HudButton
   private btnDefend!: HudButton
   private btnJester!: HudButton
+  private btnClear!: HudButton
   private overlayText: Phaser.GameObjects.Text | null = null
   private overlayBtn: HudButton | null = null
   private enemyCenterY = 180
   private enemyCenterX = 195
   private jesterIconY = 400
   private playAreaY = 430
+  private handY = 600
+  private resizeTimer: number | null = null
 
   constructor() {
     super('Table')
@@ -75,22 +97,18 @@ export class TableScene extends Phaser.Scene {
       this.scene.stop('Menu')
     }
 
-    const { width, height } = this.scale
-    this.add.image(width / 2, height / 2, IMAGE_KEYS.bgTable).setDisplaySize(width, height)
+    lockHiDpiCamera(this)
+    const { width, height } = viewSize(this)
+    this.bg = this.add.image(width / 2, height / 2, IMAGE_KEYS.bgTable)
 
-    // 顶栏：状态文案屏幕居中；菜单无框靠右
-    const topY = 28
-    const menuW = 72
-    const menuX = width - menuW / 2 - 10
-
-    this.plaque = new StatusPlaque(this, width / 2, topY)
+    this.plaque = new StatusPlaque(this, width / 2, du(28, this))
     this.plaque.setDepth(30)
 
-    const menuBtn = new HudButton(this, {
-      x: menuX,
-      y: topY,
+    this.menuBtn = new HudButton(this, {
+      x: width - du(46, this),
+      y: du(28, this),
       label: zh.menu,
-      width: menuW,
+      width: 72,
       height: 36,
       framed: false,
       onClick: () => {
@@ -99,124 +117,206 @@ export class TableScene extends Phaser.Scene {
         this.scene.start('Menu')
       },
     })
-    menuBtn.setDepth(30)
-
-    // 顶栏仅文字高度约 20；敌人卡水平居中，左右分列 meta / 属性
-    const topBarBottom = topY + 14
-    const enemyCenterY = topBarBottom + 16 + ENEMY_CARD_H / 2
-    const enemyCenterX = width / 2
-    const enemyLeft = enemyCenterX - ENEMY_CARD_W / 2
-    const enemyRight = enemyCenterX + ENEMY_CARD_W / 2
-    const enemyBottom = enemyCenterY + ENEMY_CARD_H / 2
-    const sideGap = 8
-    const metaX = 10
-    const metaColW = Math.max(72, enemyLeft - sideGap - metaX)
-    const hpY = enemyBottom + 10
-    const statsX = enemyRight + sideGap
-    const statsY = enemyCenterY
-    // 手牌中心 y = height - 236；预览高于选中上浮牌顶（−24），避免被遮
-    const handY = height - 236
-    const previewY = handY - 96
-    const playAreaY = Math.round((hpY + 28 + previewY - 36) / 2)
+    this.menuBtn.setDepth(30)
 
     this.hpBarBg = this.add
-      .rectangle(enemyCenterX, hpY, ENEMY_CARD_W, 8, 0x2a2420, 0.95)
+      .rectangle(0, 0, du(ENEMY_CARD_W, this), du(8, this), 0x2a2420, 0.95)
       .setDepth(6)
     this.hpBarFill = this.add
-      .rectangle(enemyCenterX - ENEMY_CARD_W / 2, hpY, ENEMY_CARD_W, 8, 0x8f1d1d, 1)
+      .rectangle(0, 0, du(ENEMY_CARD_W, this), du(8, this), 0x8f1d1d, 1)
       .setOrigin(0, 0.5)
       .setDepth(7)
 
     this.enemyStats = this.add
-      .text(statsX, statsY, '', {
-        fontFamily: FONT_UI,
-        fontSize: '13px',
-        color: THEME.parchment,
-        align: 'left',
-        lineSpacing: 6,
-        wordWrap: { width: Math.max(72, width - statsX - 10) },
-      })
+      .text(
+        0,
+        0,
+        '',
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '15px',
+            color: THEME.parchment,
+            align: 'left',
+            lineSpacing: 6,
+          },
+          this,
+        ),
+      )
       .setOrigin(0, 0.5)
       .setDepth(8)
 
     this.metaText = this.add
-      .text(metaX, enemyCenterY, '', {
-        fontFamily: FONT_UI,
-        fontSize: '14px',
-        color: THEME.mist,
-        lineSpacing: 6,
-        wordWrap: { width: metaColW },
-      })
+      .text(
+        0,
+        0,
+        '',
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '15px',
+            color: THEME.mist,
+            lineSpacing: 6,
+          },
+          this,
+        ),
+      )
       .setOrigin(0, 0.5)
       .setDepth(8)
 
     this.playAreaHint = this.add
-      .text(width / 2, playAreaY, zh.playAreaEmpty, {
-        fontFamily: FONT_UI,
-        fontSize: '13px',
-        color: THEME.mist,
-        align: 'center',
-      })
+      .text(
+        0,
+        0,
+        zh.playAreaEmpty,
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '14px',
+            color: THEME.mist,
+            align: 'center',
+          },
+          this,
+        ),
+      )
       .setOrigin(0.5)
       .setAlpha(0.35)
       .setDepth(4)
 
     this.previewText = this.add
-      .text(width / 2, previewY, '', {
-        fontFamily: FONT_UI,
-        fontSize: '14px',
-        color: THEME.gold,
-        align: 'center',
-      })
+      .text(
+        0,
+        0,
+        '',
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '15px',
+            color: THEME.gold,
+            align: 'center',
+          },
+          this,
+        ),
+      )
       .setOrigin(0.5)
       .setDepth(8)
 
-    this.enemyCenterX = enemyCenterX
-    this.enemyCenterY = enemyCenterY
-    this.jesterIconY = enemyBottom - 22
-    this.playAreaY = playAreaY
-
-    // 上排：次要操作；最底一排：出牌 / 防御（主操作）
-    const ySecondary = height - 122
-    const yPrimary = height - 66
     this.btnYield = new HudButton(this, {
-      x: width * 0.18,
-      y: ySecondary,
+      x: 0,
+      y: 0,
       label: zh.yield,
       width: 108,
       onClick: () => this.intent({ type: 'YIELD' }),
     })
     this.btnJester = new HudButton(this, {
-      x: width * 0.5,
-      y: ySecondary,
+      x: 0,
+      y: 0,
       label: zh.jester,
       width: 108,
       onClick: () => this.intent({ type: 'FLIP_JESTER' }),
     })
-    new HudButton(this, {
-      x: width * 0.82,
-      y: ySecondary,
+    this.btnClear = new HudButton(this, {
+      x: 0,
+      y: 0,
       label: zh.clear,
       width: 108,
       onClick: () => this.intent({ type: 'CLEAR_SELECTION' }),
     })
     this.btnPlay = new HudButton(this, {
-      x: width * 0.32,
-      y: yPrimary,
+      x: 0,
+      y: 0,
       label: zh.play,
       width: 108,
       onClick: () => this.intent({ type: 'CONFIRM_PLAY' }),
     })
     this.btnDefend = new HudButton(this, {
-      x: width * 0.68,
-      y: yPrimary,
+      x: 0,
+      y: 0,
       label: zh.defend,
       width: 108,
       onClick: () => this.intent({ type: 'CONFIRM_DEFEND' }),
     })
 
+    this.layoutChrome()
+    this.scale.on('resize', this.onResize, this)
+
     this.unsubscribe = this.controller.subscribe(() => this.renderView())
     this.renderView()
+  }
+
+  private onResize = (): void => {
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer)
+    }
+    this.resizeTimer = window.setTimeout(() => {
+      this.resizeTimer = null
+      this.layoutChrome()
+      this.renderView()
+    }, 50)
+  }
+
+  /** Position chrome against current canvas size (device pixels). */
+  private layoutChrome(): void {
+    applyHiDpiCamera(this)
+    const { width, height } = viewSize(this)
+    this.bg.setPosition(width / 2, height / 2).setDisplaySize(width, height)
+
+    const topY = du(28, this)
+    const menuW = du(72, this)
+    this.plaque.setPosition(width / 2, topY)
+    this.menuBtn.setPosition(width - menuW / 2 - du(10, this), topY)
+
+    const enemyW = du(ENEMY_CARD_W, this)
+    const enemyH = du(ENEMY_CARD_H, this)
+    const topBarBottom = topY + du(14, this)
+    const enemyCenterY = topBarBottom + du(16, this) + enemyH / 2
+    const enemyCenterX = width / 2
+    const enemyLeft = enemyCenterX - enemyW / 2
+    const enemyRight = enemyCenterX + enemyW / 2
+    const enemyBottom = enemyCenterY + enemyH / 2
+    const sideGap = du(8, this)
+    const metaX = du(10, this)
+    const metaColW = Math.max(du(72, this), enemyLeft - sideGap - metaX)
+    const statsX = enemyRight + sideGap
+    const hpY = enemyBottom + du(10, this)
+    const handY = height - du(236, this)
+    const previewY = handY - du(96, this)
+    const playAreaY = Math.round((hpY + du(28, this) + previewY - du(36, this)) / 2)
+
+    this.enemyCenterX = enemyCenterX
+    this.enemyCenterY = enemyCenterY
+    this.jesterIconY = enemyBottom - du(22, this)
+    this.playAreaY = playAreaY
+    this.handY = handY
+
+    this.hpBarBg.setPosition(enemyCenterX, hpY)
+    this.hpBarBg.setSize(enemyW, du(8, this))
+    this.hpBarFill.setPosition(enemyCenterX - enemyW / 2, hpY)
+    this.hpBarFill.setSize(enemyW, du(8, this))
+
+    this.enemyStats.setPosition(statsX, enemyCenterY)
+    this.enemyStats.setWordWrapWidth(Math.max(du(72, this), width - statsX - du(10, this)))
+
+    this.metaText.setPosition(metaX, enemyCenterY)
+    this.metaText.setWordWrapWidth(metaColW)
+
+    this.playAreaHint.setPosition(width / 2, playAreaY)
+    this.previewText.setPosition(width / 2, previewY)
+
+    const ySecondary = height - du(122, this)
+    const yPrimary = height - du(66, this)
+    this.btnYield.setPosition(width * 0.18, ySecondary)
+    this.btnJester.setPosition(width * 0.5, ySecondary)
+    this.btnClear.setPosition(width * 0.82, ySecondary)
+    this.btnPlay.setPosition(width * 0.32, yPrimary)
+    this.btnDefend.setPosition(width * 0.68, yPrimary)
+
+    if (this.overlayText) {
+      this.overlayText.setPosition(width / 2, height * 0.4)
+    }
+    if (this.overlayBtn) {
+      this.overlayBtn.setPosition(width / 2, height * 0.54)
+    }
   }
 
   private intent(intent: Parameters<GameController['dispatch']>[0]): void {
@@ -268,7 +368,7 @@ export class TableScene extends Phaser.Scene {
 
     const e = view.enemy
     const ratio = Math.max(0, Math.min(1, e.remainingHealth / e.health))
-    this.hpBarFill.width = ENEMY_CARD_W * ratio
+    this.hpBarFill.width = du(ENEMY_CARD_W, this) * ratio
     this.hpBarFill.setFillStyle(ratio > 0.35 ? 0x8f1d1d : 0xb45309)
 
     this.enemyStats.setText(
@@ -290,24 +390,22 @@ export class TableScene extends Phaser.Scene {
     this.playAreaHint.setVisible(n === 0 && view.phase !== 'won' && view.phase !== 'lost')
     if (n === 0) return
 
-    const { width } = this.scale
-    const cardW = CARD_W
-    const cardH = CARD_H
-    const step = n <= 1 ? 0 : Math.min(42, (width - 48) / (n - 1))
-    const span = step * Math.max(n - 1, 0)
-    const startX = width / 2 - span / 2
+    const { width } = viewSize(this)
+    const cardWDesign = CARD_W
+    const cardW = du(cardWDesign, this)
+    const { step, startX } = fanCenters(n, width, cardW, du(42, this), du(10, this))
     const y = this.playAreaY
 
     cards.forEach((card, index) => {
       const viewCard = new CardView(this, card, {
-        width: cardW,
-        height: cardH,
+        width: cardWDesign,
+        height: CARD_H,
         interactive: false,
       })
       const x = n === 1 ? width / 2 : startX + index * step
       // 轻微扇形：中间平、两侧微仰
       const t = n <= 1 ? 0 : index / (n - 1) - 0.5
-      viewCard.setPosition(x, y + Math.abs(t) * 6)
+      viewCard.setPosition(x, y + Math.abs(t) * du(6, this))
       viewCard.setAngle(t * 14)
       viewCard.setDepth(10 + index)
       this.playAreaViews.push(viewCard)
@@ -318,33 +416,30 @@ export class TableScene extends Phaser.Scene {
     for (const v of this.handViews) v.destroy(true)
     this.handViews = []
 
-    const { width, height } = this.scale
+    const { width } = viewSize(this)
     const cards = view.hand
     const n = cards.length
     if (n === 0) return
 
-    const cardW = 58
-    const cardH = 84
-    // 牌心间距：保证点选条带互不重叠
-    const step = n <= 1 ? 0 : Math.min(54, (width - 32) / (n - 1))
-    const span = step * Math.max(n - 1, 0)
-    const startX = width / 2 - span / 2
-    // 抬高手牌，远离底部按钮
-    const y = height - 236
+    const cardWDesign = 58
+    const cardHDesign = 84
+    const cardW = du(cardWDesign, this)
+    const { step, startX } = fanCenters(n, width, cardW, du(54, this), du(10, this))
+    const y = this.handY
 
     cards.forEach((card, index) => {
       const isLast = index === n - 1
-      const hitWidth = isLast ? cardW : Math.max(28, Math.min(cardW, step))
+      const hitDesign = isLast ? cardWDesign : Math.max(28, Math.min(cardWDesign, step / getDpr(this)))
       const viewCard = new CardView(this, card, {
-        width: cardW,
-        height: cardH,
-        hitWidth,
+        width: cardWDesign,
+        height: cardHDesign,
+        hitWidth: hitDesign,
       })
       const x = n === 1 ? width / 2 : startX + index * step
       viewCard.setPosition(x, y)
       viewCard.setDepth(20 + index)
       if (view.selection.includes(card.id)) {
-        viewCard.y = y - 24
+        viewCard.y = y - du(24, this)
         viewCard.setSelected(true)
       }
       viewCard.on('card-tap', (cardId: string) => {
@@ -355,7 +450,7 @@ export class TableScene extends Phaser.Scene {
   }
 
   private renderMeta(view: SessionView): void {
-    const { width } = this.scale
+    const { width } = viewSize(this)
     this.metaText.setText(
       [
         `阶段：${phaseNameZh(view.phase)}`,
@@ -371,8 +466,8 @@ export class TableScene extends Phaser.Scene {
     this.jesterIcons = []
     for (let i = 0; i < view.jestersRemaining; i += 1) {
       const icon = this.add
-        .image(width - 34 - i * 36, this.jesterIconY, IMAGE_KEYS.jester)
-        .setDisplaySize(32, 44)
+        .image(width - du(34, this) - i * du(36, this), this.jesterIconY, IMAGE_KEYS.jester)
+        .setDisplaySize(du(32, this), du(44, this))
         .setAlpha(0.95)
       this.jesterIcons.push(icon)
     }
@@ -423,21 +518,29 @@ export class TableScene extends Phaser.Scene {
     }
 
     if (this.overlayText) return
-    const { width, height } = this.scale
+    const { width, height } = viewSize(this)
     const msg =
       view.phase === 'won' && view.victory
         ? `${zh.victory}\n${victoryNameZh(view.victory)}`
         : `${zh.defeat}\n${tError(view.defeatReason ?? '')}`
 
     this.overlayText = this.add
-      .text(width / 2, height * 0.4, msg, {
-        fontFamily: FONT_UI,
-        fontSize: '28px',
-        color: THEME.gold,
-        align: 'center',
-        backgroundColor: '#000000aa',
-        padding: { x: 18, y: 14 },
-      })
+      .text(
+        width / 2,
+        height * 0.4,
+        msg,
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '28px',
+            color: THEME.gold,
+            align: 'center',
+            backgroundColor: '#000000aa',
+            padding: { x: 18, y: 14 },
+          },
+          this,
+        ),
+      )
       .setOrigin(0.5)
       .setDepth(100)
 
@@ -457,6 +560,11 @@ export class TableScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    if (this.resizeTimer !== null) {
+      window.clearTimeout(this.resizeTimer)
+      this.resizeTimer = null
+    }
+    this.scale.off('resize', this.onResize, this)
     this.unsubscribe?.()
     this.unsubscribe = null
   }

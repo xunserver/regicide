@@ -6,6 +6,7 @@ import {
   IMAGE_KEYS,
   SUIT_COLOR,
 } from '../assets/manifest.ts'
+import { du, getDpr } from '../dpr.ts'
 import { FONT_UI } from '../i18n/zh.ts'
 
 function royalKey(rank: Rank): string | null {
@@ -64,8 +65,10 @@ export class CardView extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, card: Card, options: CardViewOptions = {}) {
     super(scene, 0, 0)
     this.cardId = card.id
-    this.widthPx = options.width ?? CARD_W
-    this.heightPx = options.height ?? CARD_H
+    // width/height are design CSS pixels; convert to device pixels.
+    const dpr = getDpr(scene)
+    this.widthPx = (options.width ?? CARD_W) * dpr
+    this.heightPx = (options.height ?? CARD_H) * dpr
 
     const royal = royalKey(card.rank)
     const textureKey = royal ?? IMAGE_KEYS.cardFrame
@@ -94,7 +97,8 @@ export class CardView extends Phaser.GameObjects.Container {
     }
 
     if (options.interactive !== false) {
-      const hitW = Math.max(24, Math.min(this.widthPx, options.hitWidth ?? this.widthPx))
+      const hitDesign = options.hitWidth ?? options.width ?? CARD_W
+      const hitW = Math.max(du(24, scene), Math.min(this.widthPx, hitDesign * dpr))
       // 条带贴左：与下层牌的可见露出区域对齐
       const hitCenterX = -this.widthPx / 2 + hitW / 2
       this.hitZone = scene.add.zone(hitCenterX, 0, hitW, this.heightPx).setOrigin(0.5)
@@ -128,12 +132,14 @@ export class CardView extends Phaser.GameObjects.Container {
   }
 
   private addRankLabel(rank: string, suit: Suit, x: number, y: number): void {
+    // widthPx already device pixels — font size matches card, no extra DPR multiply.
     const label = this.scene.add
       .text(x, y, rank, {
         fontFamily: FONT_UI,
         fontSize: `${Math.round(this.widthPx * 0.26)}px`,
         color: SUIT_COLOR[suit],
         fontStyle: 'bold',
+        resolution: 1,
       })
       .setOrigin(0.5)
     this.add(label)

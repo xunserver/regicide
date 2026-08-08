@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser'
 import { IMAGE_FILES } from '../assets/manifest.ts'
+import { du, lockHiDpiCamera, textStyle, viewSize } from '../dpr.ts'
 import { FONT_UI, zh } from '../i18n/zh.ts'
 
 export class BootScene extends Phaser.Scene {
@@ -8,6 +9,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    lockHiDpiCamera(this)
     this.scene.start('Preload')
   }
 }
@@ -18,21 +20,30 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const { width, height } = this.scale
-    this.add.rectangle(width / 2, height / 2, 240, 14, 0x2a2420)
+    lockHiDpiCamera(this)
+    const { width, height } = viewSize(this)
+    this.add.rectangle(width / 2, height / 2, du(240, this), du(14, this), 0x2a2420)
     const bar = this.add
-      .rectangle(width / 2 - 118, height / 2, 4, 10, 0xc9a227)
+      .rectangle(width / 2 - du(118, this), height / 2, du(4, this), du(10, this), 0xc9a227)
       .setOrigin(0, 0.5)
     this.add
-      .text(width / 2, height / 2 - 36, zh.loading, {
-        fontFamily: FONT_UI,
-        fontSize: '18px',
-        color: '#e8dcc4',
-      })
+      .text(
+        width / 2,
+        height / 2 - du(36, this),
+        zh.loading,
+        textStyle(
+          {
+            fontFamily: FONT_UI,
+            fontSize: '18px',
+            color: '#e8dcc4',
+          },
+          this,
+        ),
+      )
       .setOrigin(0.5)
 
     this.load.on('progress', (value: number) => {
-      bar.width = 236 * value
+      bar.width = du(236, this) * value
     })
 
     for (const [key, url] of Object.entries(IMAGE_FILES)) {

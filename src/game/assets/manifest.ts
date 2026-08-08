@@ -1,6 +1,8 @@
-/** Logical mobile canvas - portrait H5. */
+/** Fallback / design reference size (portrait H5). */
 export const GAME_WIDTH = 390
 export const GAME_HEIGHT = 844
+/** Cap layout width for large phones / desktop; host CSS uses the same value. */
+export const MAX_GAME_WIDTH = 480
 
 /** Respect Vite `base` so assets resolve under `/regicide/` on GitHub Pages. */
 export const ASSET_PATH = `${import.meta.env.BASE_URL}assets/regicide`.replace(/\/$/, '')
