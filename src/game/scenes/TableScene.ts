@@ -101,16 +101,18 @@ export class TableScene extends Phaser.Scene {
     })
     menuBtn.setDepth(30)
 
-    // 顶栏仅文字高度约 20；状态文案贴敌人卡左侧，属性在右侧
+    // 顶栏仅文字高度约 20；敌人卡水平居中，左右分列 meta / 属性
     const topBarBottom = topY + 14
     const enemyCenterY = topBarBottom + 16 + ENEMY_CARD_H / 2
-    const metaX = 10
-    const metaColW = 108
-    const enemyCenterX = metaX + metaColW + 4 + ENEMY_CARD_W / 2
-    const enemyBottom = enemyCenterY + ENEMY_CARD_H / 2
+    const enemyCenterX = width / 2
+    const enemyLeft = enemyCenterX - ENEMY_CARD_W / 2
     const enemyRight = enemyCenterX + ENEMY_CARD_W / 2
+    const enemyBottom = enemyCenterY + ENEMY_CARD_H / 2
+    const sideGap = 8
+    const metaX = 10
+    const metaColW = Math.max(72, enemyLeft - sideGap - metaX)
     const hpY = enemyBottom + 10
-    const statsX = enemyRight + 8
+    const statsX = enemyRight + sideGap
     const statsY = enemyCenterY
     // 手牌中心 y = height - 236；预览高于选中上浮牌顶（−24），避免被遮
     const handY = height - 236
