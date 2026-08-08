@@ -2,7 +2,8 @@
 export const GAME_WIDTH = 390
 export const GAME_HEIGHT = 844
 
-export const ASSET_PATH = '/assets/regicide'
+/** Respect Vite `base` so assets resolve under `/regicide/` on GitHub Pages. */
+export const ASSET_PATH = `${import.meta.env.BASE_URL}assets/regicide`.replace(/\/$/, '')
 
 export const IMAGE_KEYS = {
   bgTable: 'bg_table',
