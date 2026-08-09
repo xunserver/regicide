@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser'
-import { IMAGE_FILES } from '../assets/manifest.ts'
+import { IMAGE_FILES, THEME } from '../assets/manifest.ts'
 import { du, lockHiDpiCamera, textStyle, viewSize } from '../dpr.ts'
 import { FONT_UI, zh } from '../i18n/zh.ts'
 
@@ -35,7 +35,7 @@ export class PreloadScene extends Phaser.Scene {
           {
             fontFamily: FONT_UI,
             fontSize: '18px',
-            color: '#e8dcc4',
+            color: THEME.parchment,
           },
           this,
         ),
@@ -52,6 +52,9 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start('Menu')
+    const tableData = this.game.registry.get('tableData') as
+      | { seed?: number; resume?: boolean }
+      | undefined
+    this.scene.start('Table', tableData ?? { seed: Date.now() >>> 0 })
   }
 }
