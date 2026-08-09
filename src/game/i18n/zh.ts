@@ -40,8 +40,6 @@ export const zh = {
   castleLeft: '城堡剩余',
   fallen: '已击败',
   jesters: '小丑',
-  playAreaEmpty: '已出牌将落在此处',
-
   hp: '生命',
   atk: '攻击',
   base: '基础',

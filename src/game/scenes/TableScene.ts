@@ -5,8 +5,6 @@ import {
   type SessionView,
 } from '../../orchestration/index.ts'
 import {
-  CARD_H,
-  CARD_W,
   ENEMY_CARD_H,
   ENEMY_CARD_W,
   IMAGE_KEYS,
@@ -54,7 +52,6 @@ export class TableScene extends Phaser.Scene {
   private controller!: GameController
   private unsubscribe: (() => void) | null = null
   private handViews: CardView[] = []
-  private playAreaViews: CardView[] = []
   private enemyView: CardView | null = null
   private bg!: Phaser.GameObjects.Image
   private plaque!: StatusPlaque
@@ -64,7 +61,6 @@ export class TableScene extends Phaser.Scene {
   private hpBarFill!: Phaser.GameObjects.Rectangle
   private metaText!: Phaser.GameObjects.Text
   private previewText!: Phaser.GameObjects.Text
-  private playAreaHint!: Phaser.GameObjects.Text
   private jesterIcons: Phaser.GameObjects.Image[] = []
   private btnPlay!: HudButton
   private btnYield!: HudButton
@@ -76,7 +72,6 @@ export class TableScene extends Phaser.Scene {
   private enemyCenterY = 180
   private enemyCenterX = 195
   private jesterIconY = 400
-  private playAreaY = 430
   private handY = 600
   private resizeTimer: number | null = null
 
@@ -118,7 +113,8 @@ export class TableScene extends Phaser.Scene {
       onClick: () => {
         this.cleanup()
         this.scene.stop('Table')
-        this.scene.start('Menu')
+        const onExit = this.game.registry.get('onExitToMenu') as (() => void) | undefined
+        onExit?.()
       },
     })
     this.menuBtn.setDepth(30)
@@ -167,25 +163,6 @@ export class TableScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5)
       .setDepth(8)
-
-    this.playAreaHint = this.add
-      .text(
-        0,
-        0,
-        zh.playAreaEmpty,
-        textStyle(
-          {
-            fontFamily: FONT_UI,
-            fontSize: '14px',
-            color: THEME.mist,
-            align: 'center',
-          },
-          this,
-        ),
-      )
-      .setOrigin(0.5)
-      .setAlpha(0.35)
-      .setDepth(4)
 
     this.previewText = this.add
       .text(
@@ -309,12 +286,10 @@ export class TableScene extends Phaser.Scene {
     const hpY = enemyBottom + du(10, this)
     const handY = height - du(236, this)
     const previewY = handY - du(96, this)
-    const playAreaY = Math.round((hpY + du(28, this) + previewY - du(36, this)) / 2)
 
     this.enemyCenterX = enemyCenterX
     this.enemyCenterY = enemyCenterY
     this.jesterIconY = enemyBottom - du(22, this)
-    this.playAreaY = playAreaY
     this.handY = handY
 
     this.hpBarBg.setPosition(enemyCenterX, hpY)
@@ -328,7 +303,6 @@ export class TableScene extends Phaser.Scene {
     this.metaText.setPosition(metaX, enemyCenterY)
     this.metaText.setWordWrapWidth(metaColW)
 
-    this.playAreaHint.setPosition(width / 2, playAreaY)
     this.previewText.setPosition(width / 2, previewY)
 
     const ySecondary = height - du(122, this)
@@ -379,7 +353,6 @@ export class TableScene extends Phaser.Scene {
   private renderView(): void {
     const view = this.controller.getView()
     this.renderEnemy(view)
-    this.renderPlayArea(view)
     this.renderHand(view)
     this.renderMeta(view)
     this.renderCommands(view)
@@ -428,37 +401,6 @@ export class TableScene extends Phaser.Scene {
         `${zh.base}${e.attack} − ${zh.shield}${e.shield}`,
       ].join('\n'),
     )
-  }
-
-  private renderPlayArea(view: SessionView): void {
-    for (const v of this.playAreaViews) v.destroy(true)
-    this.playAreaViews = []
-
-    const cards = view.playArea
-    const n = cards.length
-    this.playAreaHint.setVisible(n === 0 && view.phase !== 'won' && view.phase !== 'lost')
-    if (n === 0) return
-
-    const { width } = viewSize(this)
-    const cardWDesign = CARD_W
-    const cardW = du(cardWDesign, this)
-    const { step, startX } = fanCenters(n, width, cardW, du(42, this), du(10, this))
-    const y = this.playAreaY
-
-    cards.forEach((card, index) => {
-      const viewCard = new CardView(this, card, {
-        width: cardWDesign,
-        height: CARD_H,
-        interactive: false,
-      })
-      const x = n === 1 ? width / 2 : startX + index * step
-      // 轻微扇形：中间平、两侧微仰
-      const t = n <= 1 ? 0 : index / (n - 1) - 0.5
-      viewCard.setPosition(x, y + Math.abs(t) * du(6, this))
-      viewCard.setAngle(t * 14)
-      viewCard.setDepth(10 + index)
-      this.playAreaViews.push(viewCard)
-    })
   }
 
   private renderHand(view: SessionView): void {
