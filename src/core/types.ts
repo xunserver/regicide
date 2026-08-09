@@ -49,8 +49,6 @@ export type GameState = {
   jestersUsed: number
   /** Solo: cannot yield twice in a row. */
   lastTurnYielded: boolean
-  /** True after at least one successful PLAY this turn; enables END_TURN. */
-  playedThisTurn: boolean
   victory?: VictoryRank
   defeatReason?: string
 }
@@ -59,14 +57,12 @@ export type Action =
   | { type: 'FLIP_JESTER' }
   | { type: 'PLAY'; cardIds: string[] }
   | { type: 'YIELD' }
-  | { type: 'END_TURN' }
   | { type: 'DEFEND'; cardIds: string[] }
 
 export type GameEvent =
   | { type: 'JESTER_FLIPPED'; discarded: Card[]; drawn: Card[] }
   | { type: 'CARDS_PLAYED'; cards: Card[]; attackValue: number }
   | { type: 'YIELDED' }
-  | { type: 'TURN_ENDED' }
   | { type: 'POWER_HEARTS'; moved: Card[] }
   | { type: 'POWER_DIAMONDS'; drawn: Card[] }
   | { type: 'POWER_CLUBS'; damage: number }

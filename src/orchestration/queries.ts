@@ -1,6 +1,5 @@
 import {
   activeSuits,
-  canEndTurn,
   canFlipJester,
   canYield,
   cardValue,
@@ -86,7 +85,6 @@ export function getAvailableCommands(
         ? selectedCards.length === 0
         : defendPreview.enough),
     canYield: canYield(state),
-    canEndTurn: canEndTurn(state),
     canFlipJester: canFlipJester(state),
     canNewGame: true,
   }

@@ -26,7 +26,6 @@ export function baseState(overrides: Partial<GameState> = {}): GameState {
     jestersRemaining: 2,
     jestersUsed: 0,
     lastTurnYielded: false,
-    playedThisTurn: false,
     ...overrides,
   }
 }

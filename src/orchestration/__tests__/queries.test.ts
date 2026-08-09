@@ -16,7 +16,6 @@ function stateWith(hand: GameState['hand'], enemySuit: 'H' | 'D' | 'C' | 'S' = '
     jestersRemaining: 2,
     jestersUsed: 0,
     lastTurnYielded: false,
-    playedThisTurn: false,
   }
 }
 

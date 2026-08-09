@@ -58,7 +58,6 @@ export {
 
 export {
   applyAction,
-  canEndTurn,
   canFlipJester,
   canYield,
   cloneState,
