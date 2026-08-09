@@ -63,4 +63,6 @@ export {
   cloneState,
   getDefendDamage,
   handLimit,
-} from './reduce.ts'
+  isActionAllowed,
+  PHASE_ACTIONS,
+} from './machine.ts'
