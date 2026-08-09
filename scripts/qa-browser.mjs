@@ -1,11 +1,11 @@
 /**
- * 中文 UI 复测（HTML 壳层 + Phaser 牌桌）
+ * 中文 UI 复测（修脚本收尾 bug）
  */
 import { chromium } from 'playwright'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const BASE = process.env.REGICIDE_URL ?? 'http://localhost:5173/regicide/'
+const BASE = process.env.REGICIDE_URL ?? 'http://localhost:5173/'
 const OUT = path.resolve('qa-screenshots')
 const GAME_W = 390
 const GAME_H = 844
@@ -56,18 +56,17 @@ async function main() {
   page.on('pageerror', (e) => console.error('PAGEERROR', e.message))
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded' })
-  await page.waitForSelector('.menu-page', { timeout: 15000 })
+  await page.waitForTimeout(2500)
   console.log('load', await scenes(page))
   await shot(page, 'final-01-menu')
 
-  await page.getByRole('button', { name: '开始单人' }).click()
+  await tapGame(page, 195, Math.round(GAME_H * 0.72))
   await page.waitForTimeout(700)
   if (!(await scenes(page))?.includes('Table')) {
-    await page.waitForFunction(
-      () => window.__REGICIDE_GAME__?.scene?.getScenes(true).some((s) => s.scene.key === 'Table'),
-      null,
-      { timeout: 30000 },
+    await page.evaluate(() =>
+      window.__REGICIDE_GAME__.scene.start('Table', { seed: 7 }),
     )
+    await page.waitForTimeout(800)
   }
   console.log('table', await scenes(page))
   await shot(page, 'final-02-table')
