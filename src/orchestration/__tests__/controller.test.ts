@@ -34,6 +34,11 @@ describe('createController', () => {
     expect(played.events.some((e) => e.type === 'CARDS_PLAYED')).toBe(true)
     expect(played.view.selection).toEqual([])
     expect(played.view.hand.some((c) => c.id === first.id)).toBe(false)
+    // Non-lethal plays stay in the play phase so more cards can be played.
+    if (played.view.phase === 'play') {
+      expect(played.view.commands.canEndTurn).toBe(true)
+      expect(played.view.commands.canYield).toBe(false)
+    }
   })
 
   it('rejects confirm play when selection is empty or illegal', () => {
@@ -71,6 +76,11 @@ describe('createController', () => {
     for (let i = 0; i < 40; i += 1) {
       const view = controller.getView()
       if (view.phase === 'defend' || view.phase === 'lost' || view.phase === 'won') break
+
+      if (view.commands.canEndTurn) {
+        controller.dispatch({ type: 'END_TURN' })
+        continue
+      }
 
       if (view.commands.canYield) {
         controller.dispatch({ type: 'YIELD' })

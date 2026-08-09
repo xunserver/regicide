@@ -37,6 +37,8 @@ export function applyAction(state: GameState, action: Action, rng: Rng): ApplyRe
       return playCards(state, action.cardIds, rng)
     case 'YIELD':
       return yieldTurn(state)
+    case 'END_TURN':
+      return endTurn(state)
     case 'DEFEND':
       return defend(state, action.cardIds)
     default: {
@@ -115,6 +117,7 @@ function playCards(state: GameState, cardIds: string[], rng: Rng): ApplyResult {
       hand: removeCards(state.hand, cardIds),
       playArea: [...state.playArea, ...selected],
       lastTurnYielded: false,
+      playedThisTurn: true,
     },
     events: [
       {
@@ -134,6 +137,9 @@ function yieldTurn(state: GameState): ApplyResult {
   if (state.phase !== 'play') {
     return fail(state, 'Not in play phase')
   }
+  if (state.playedThisTurn) {
+    return fail(state, 'Already played this turn; end the turn instead')
+  }
   if (state.lastTurnYielded) {
     return fail(state, 'Cannot yield twice in a row (solo)')
   }
@@ -147,6 +153,30 @@ function yieldTurn(state: GameState): ApplyResult {
       lastTurnYielded: true,
     },
     events: [{ type: 'YIELDED' }],
+    rng: dummyRng,
+  }
+
+  return enterDefendOrFinish(ctx)
+}
+
+function endTurn(state: GameState): ApplyResult {
+  if (state.phase !== 'play') {
+    return fail(state, 'Not in play phase')
+  }
+  if (!state.playedThisTurn) {
+    return fail(state, 'Play at least one card before ending the turn')
+  }
+  if (!state.enemy) {
+    return fail(state, 'No enemy')
+  }
+
+  const ctx: Mutable = {
+    state: {
+      ...state,
+      // Ending after an attack is not a yield.
+      lastTurnYielded: false,
+    },
+    events: [{ type: 'TURN_ENDED' }],
     rng: dummyRng,
   }
 
@@ -187,6 +217,7 @@ function defend(state: GameState, cardIds: string[]): ApplyResult {
     hand: removeCards(state.hand, cardIds),
     discard: [...state.discard, ...selected],
     phase: 'play',
+    playedThisTurn: false,
   }
 
   const events: GameEvent[] = [
@@ -285,7 +316,8 @@ function resolveDamageAndAftermath(
     return defeatEnemy(ctx, damageDealt === enemy.health)
   }
 
-  return enterDefendOrFinish(ctx)
+  // Keep attacking until the player ends the turn.
+  return ok(ctx.state, ctx.events)
 }
 
 function defeatEnemy(ctx: Mutable, exact: boolean): ApplyResult {
@@ -333,6 +365,7 @@ function defeatEnemy(ctx: Mutable, exact: boolean): ApplyResult {
     playArea: [],
     enemy: makeEnemy(nextEnemyCard),
     lastTurnYielded: false,
+    playedThisTurn: false,
   }
   ctx.events.push({ type: 'TURN_STARTED' })
   return finalizePlayPhaseStart(next, ctx.events)
@@ -346,6 +379,7 @@ function enterDefendOrFinish(ctx: Mutable): ApplyResult {
     const next: GameState = {
       ...ctx.state,
       phase: 'play',
+      playedThisTurn: false,
     }
     ctx.events.push({ type: 'DEFEND_REQUIRED', damage: 0 })
     ctx.events.push({ type: 'DAMAGE_BLOCKED', cards: [], damage: 0 })
@@ -424,7 +458,13 @@ export function canFlipJester(state: GameState): boolean {
 }
 
 export function canYield(state: GameState): boolean {
-  return state.phase === 'play' && !state.lastTurnYielded
+  return (
+    state.phase === 'play' && !state.lastTurnYielded && !state.playedThisTurn
+  )
+}
+
+export function canEndTurn(state: GameState): boolean {
+  return state.phase === 'play' && state.playedThisTurn
 }
 
 export function handLimit(): number {

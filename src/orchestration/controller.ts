@@ -141,6 +141,8 @@ function handleIntent(
       return commitAction(session, { type: 'DEFEND', cardIds: session.selection }, now, true)
     case 'YIELD':
       return commitAction(session, { type: 'YIELD' }, now, true)
+    case 'END_TURN':
+      return commitAction(session, { type: 'END_TURN' }, now, true)
     case 'FLIP_JESTER':
       return commitAction(session, { type: 'FLIP_JESTER' }, now, true)
     default: {
@@ -226,7 +228,11 @@ function fromPersisted(saved: PersistedSession): Internal {
   return {
     seed: saved.seed,
     rng: createSeededRngFromState(saved.rngState),
-    state: saved.state,
+    state: {
+      ...saved.state,
+      // Migrate saves created before multi-play turns.
+      playedThisTurn: saved.state.playedThisTurn ?? false,
+    },
     selection: sanitizeSelection(saved.state, saved.selection),
     createdAt: saved.createdAt,
     updatedAt: saved.updatedAt,

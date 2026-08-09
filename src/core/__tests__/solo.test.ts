@@ -133,4 +133,46 @@ describe('solo rules', () => {
     if (!result.ok) return
     expect(result.state.phase).toBe('lost')
   })
+
+  it('allows multiple plays in one turn until END_TURN', () => {
+    const rng = createSeededRng(1)
+    const state = baseState({
+      hand: [card('H', '4'), card('D', '5'), card('C', '6'), card('S', '7')],
+      enemy: enemy('C', 'J'), // atk 10, immunity clubs
+    })
+
+    const first = applyAction(state, { type: 'PLAY', cardIds: ['H4'] }, rng)
+    expect(first.ok).toBe(true)
+    if (!first.ok) return
+    expect(first.state.phase).toBe('play')
+    expect(first.state.playedThisTurn).toBe(true)
+    expect(first.state.enemy?.damageDealt).toBe(4)
+    expect(first.events.some((e) => e.type === 'DEFEND_REQUIRED')).toBe(false)
+
+    const second = applyAction(first.state, { type: 'PLAY', cardIds: ['D5'] }, rng)
+    expect(second.ok).toBe(true)
+    if (!second.ok) return
+    expect(second.state.phase).toBe('play')
+    expect(second.state.enemy?.damageDealt).toBe(9)
+
+    const yieldedInstead = applyAction(second.state, { type: 'YIELD' }, rng)
+    expect(yieldedInstead.ok).toBe(false)
+
+    const ended = applyAction(second.state, { type: 'END_TURN' }, rng)
+    expect(ended.ok).toBe(true)
+    if (!ended.ok) return
+    expect(ended.state.phase).toBe('defend')
+    expect(ended.events.some((e) => e.type === 'TURN_ENDED')).toBe(true)
+    expect(getDefendDamage(ended.state)).toBe(10)
+  })
+
+  it('rejects END_TURN before any play', () => {
+    const rng = createSeededRng(1)
+    const state = baseState({
+      hand: [card('H', '4')],
+      enemy: enemy('S', 'J'),
+    })
+    const result = applyAction(state, { type: 'END_TURN' }, rng)
+    expect(result.ok).toBe(false)
+  })
 })

@@ -6,6 +6,7 @@ export type Intent =
   | { type: 'CONFIRM_PLAY' }
   | { type: 'CONFIRM_DEFEND' }
   | { type: 'YIELD' }
+  | { type: 'END_TURN' }
   | { type: 'FLIP_JESTER' }
   | { type: 'NEW_GAME'; seed?: number }
 
@@ -14,6 +15,7 @@ export type AvailableCommands = {
   canConfirmPlay: boolean
   canConfirmDefend: boolean
   canYield: boolean
+  canEndTurn: boolean
   canFlipJester: boolean
   canNewGame: boolean
 }

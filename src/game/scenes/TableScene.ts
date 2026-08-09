@@ -210,7 +210,14 @@ export class TableScene extends Phaser.Scene {
       y: 0,
       label: zh.yield,
       width: 108,
-      onClick: () => this.intent({ type: 'YIELD' }),
+      onClick: () => {
+        const commands = this.controller.getView().commands
+        if (commands.canEndTurn) {
+          this.intent({ type: 'END_TURN' })
+          return
+        }
+        this.intent({ type: 'YIELD' })
+      },
     })
     this.btnJester = new HudButton(this, {
       x: 0,
@@ -353,6 +360,7 @@ export class TableScene extends Phaser.Scene {
       intent.type === 'CONFIRM_PLAY' ||
       intent.type === 'CONFIRM_DEFEND' ||
       intent.type === 'YIELD' ||
+      intent.type === 'END_TURN' ||
       intent.type === 'FLIP_JESTER'
     ) {
       playSuitFx({
@@ -534,7 +542,9 @@ export class TableScene extends Phaser.Scene {
       )
       this.plaque.setMessage(zh.enemyStrikes)
     } else if (view.phase === 'play') {
-      this.previewText.setText(zh.selectHint)
+      this.previewText.setText(
+        view.commands.canEndTurn ? zh.keepPlayingHint : zh.selectHint,
+      )
       this.plaque.setMessage(zh.yourTurn)
     } else {
       this.previewText.setText('')
@@ -545,7 +555,13 @@ export class TableScene extends Phaser.Scene {
     const c = view.commands
     this.btnPlay.setEnabled(c.canConfirmPlay)
     this.btnDefend.setEnabled(c.canConfirmDefend)
-    this.btnYield.setEnabled(c.canYield)
+    if (c.canEndTurn) {
+      this.btnYield.setLabel(zh.endTurn)
+      this.btnYield.setEnabled(true)
+    } else {
+      this.btnYield.setLabel(zh.yield)
+      this.btnYield.setEnabled(c.canYield)
+    }
     this.btnJester.setEnabled(c.canFlipJester)
   }
 

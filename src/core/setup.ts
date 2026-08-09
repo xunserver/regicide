@@ -40,6 +40,7 @@ export function createSoloGame(options: CreateSoloOptions = {}): {
     jestersRemaining: JESTERS_SOLO,
     jestersUsed: 0,
     lastTurnYielded: false,
+    playedThisTurn: false,
   }
 
   return { state, rng }
