@@ -23,6 +23,9 @@ import {
   victoryNameZh,
   zh,
 } from '../i18n/zh.ts'
+import { bindSfxUnlock } from '../audio/Sfx.ts'
+import { cancelSpeech } from '../audio/Voice.ts'
+import { announceBoss, playSuitFx } from '../fx/SuitFx.ts'
 import { CardView } from '../objects/CardView.ts'
 import { HudButton, StatusPlaque } from '../ui/Hud.ts'
 
@@ -97,6 +100,7 @@ export class TableScene extends Phaser.Scene {
       this.scene.stop('Menu')
     }
 
+    bindSfxUnlock(this.game.canvas ?? window)
     lockHiDpiCamera(this)
     const { width, height } = viewSize(this)
     this.bg = this.add.image(width / 2, height / 2, IMAGE_KEYS.bgTable)
@@ -242,6 +246,23 @@ export class TableScene extends Phaser.Scene {
 
     this.unsubscribe = this.controller.subscribe(() => this.renderView())
     this.renderView()
+
+    // Opening royal entrance (menu/play-again click usually unlocked audio already).
+    const opening = this.controller.getView().enemy?.card
+    if (opening) {
+      this.time.delayedCall(280, () =>
+        announceBoss(
+          this,
+          {
+            enemyX: this.enemyCenterX,
+            enemyY: this.enemyCenterY,
+            handY: this.handY,
+            centerX: this.enemyCenterX,
+          },
+          opening,
+        ),
+      )
+    }
   }
 
   private onResize = (): void => {
@@ -324,6 +345,26 @@ export class TableScene extends Phaser.Scene {
     if (!result.ok) {
       this.plaque.setMessage(tError(result.error))
       this.cameras.main.shake(80, 0.004)
+      return
+    }
+
+    // Suit / combat feedback after state has re-rendered via subscribe.
+    if (
+      intent.type === 'CONFIRM_PLAY' ||
+      intent.type === 'CONFIRM_DEFEND' ||
+      intent.type === 'YIELD' ||
+      intent.type === 'FLIP_JESTER'
+    ) {
+      playSuitFx({
+        scene: this,
+        events: result.events,
+        anchors: {
+          enemyX: this.enemyCenterX,
+          enemyY: this.enemyCenterY,
+          handY: this.handY,
+          centerX: this.enemyCenterX,
+        },
+      })
     }
   }
 
@@ -567,6 +608,7 @@ export class TableScene extends Phaser.Scene {
     this.scale.off('resize', this.onResize, this)
     this.unsubscribe?.()
     this.unsubscribe = null
+    cancelSpeech()
   }
 
   shutdown(): void {
